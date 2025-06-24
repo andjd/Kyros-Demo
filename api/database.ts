@@ -13,14 +13,41 @@ export function getDatabase(): Database {
 function initializeSchema() {
   if (!db) return;
   
-  // Create tables here
+  // Create users table
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('Admin', 'Clinician')),
+      role TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create patients table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS patients (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      full_name TEXT NOT NULL,
+      date_of_birth DATE NOT NULL,
+      ssn TEXT UNIQUE NOT NULL,
+      symptoms TEXT,
+      clinical_notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create junction table for patient-clinician relationship (HABTM)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS patient_clinicians (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      patient_id INTEGER NOT NULL,
+      clinician_id INTEGER NOT NULL,
+      assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE,
+      FOREIGN KEY (clinician_id) REFERENCES users (id) ON DELETE CASCADE,
+      UNIQUE (patient_id, clinician_id)
     )
   `);
 }

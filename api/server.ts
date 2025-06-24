@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { sign, jwt } from 'hono/jwt'
 import { getDatabase } from "./database.ts";
+import { PatientController } from "./controllers/PatientController.ts";
 
 const app = new Hono();
 
@@ -78,6 +79,15 @@ app.get("/api/profile", (c) => {
     }
   });
 });
+
+// Patient routes
+const patientController = new PatientController();
+
+// JWT middleware for patient routes
+app.use("/api/patients/*", jwt({ secret: JWT_SECRET }));
+
+// Patient intake endpoint
+app.post("/api/patients/intake", (c) => patientController.postIntake(c));
 
 console.log("Server starting on http://localhost:8000");
 

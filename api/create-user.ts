@@ -22,16 +22,19 @@ function main() {
     Deno.exit(1);
   }
   
-  console.log("Select role:");
+  console.log("Select role(s):");
   console.log("1. Admin");
   console.log("2. Clinician");
-  const roleInput = prompt("Enter choice (1 or 2):");
+  console.log("3. Both Admin and Clinician");
+  const roleInput = prompt("Enter choice (1, 2, or 3):");
   
   let role: string;
   if (roleInput === "1") {
     role = "Admin";
   } else if (roleInput === "2") {
     role = "Clinician";
+  } else if (roleInput === "3") {
+    role = "Admin,Clinician";
   } else {
     console.error("Invalid role selection");
     Deno.exit(1);
