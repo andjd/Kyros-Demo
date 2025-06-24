@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { sign, verify } from "@hono/jwt";
-import { jwt } from "@hono/jwt";
+import { sign, jwt } from 'hono/jwt'
 import { getDatabase } from "./database.ts";
 
 const app = new Hono();
@@ -65,27 +64,19 @@ app.post("/api/login", async (c) => {
   }
 });
 
+// JWT middleware for protected routes
+app.use("/api/profile", jwt({ secret: JWT_SECRET }));
+
 // Protected route example
-app.get("/api/profile", async (c) => {
-  try {
-    const authHeader = c.req.header("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return c.json({ error: "No token provided" }, 401);
+app.get("/api/profile", (c) => {
+  const payload = c.get("jwtPayload");
+  return c.json({
+    user: {
+      id: payload.id,
+      username: payload.username,
+      role: payload.role,
     }
-
-    const token = authHeader.substring(7);
-    const payload = await verify(token, new TextEncoder().encode(JWT_SECRET));
-
-    return c.json({
-      user: {
-        id: payload.id,
-        username: payload.username,
-        role: payload.role,
-      }
-    });
-  } catch (error) {
-    return c.json({ error: "Invalid token" }, 401);
-  }
+  });
 });
 
 console.log("Server starting on http://localhost:8000");
