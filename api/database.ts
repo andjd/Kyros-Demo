@@ -30,7 +30,7 @@ function initializeSchema() {
       id TEXT PRIMARY KEY NOT NULL,
       full_name TEXT NOT NULL,
       date_of_birth DATE NOT NULL,
-      ssn TEXT UNIQUE NOT NULL,
+      ssn INTEGER UNIQUE NOT NULL,
       symptoms TEXT,
       clinical_notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

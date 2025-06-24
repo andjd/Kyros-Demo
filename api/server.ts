@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { sign, jwt } from 'hono/jwt'
 import { getDatabase } from "./database.ts";
 import { PatientController } from "./controllers/PatientController.ts";
+import { transformResponse } from "./middleware/transformResponse.ts";
 
 const app = new Hono();
 
@@ -10,6 +11,7 @@ const app = new Hono();
 const JWT_SECRET = "your-secret-key-change-this-in-production";
 
 app.use("/*", cors());
+app.use("/*", transformResponse);
 
 interface LoginRequest {
   username: string;
@@ -88,6 +90,10 @@ app.use("/api/patients/*", jwt({ secret: JWT_SECRET }));
 
 // Patient intake endpoint
 app.post("/api/patients/intake", (c) => patientController.postIntake(c));
+
+// Get patients endpoints
+app.get("/api/patients", (c) => patientController.getPatients(c));
+app.get("/api/patients/:id", (c) => patientController.getPatient(c));
 
 console.log("Server starting on http://localhost:8000");
 

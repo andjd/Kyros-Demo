@@ -11,7 +11,9 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "jsxImportSourceTypes": "@types/react"
+    "jsxImportSourceTypes": "@types/react",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
   "imports": {
     "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.4",
@@ -27,7 +29,10 @@
     "@hono/jwt": "jsr:@hono/jwt@^2.3.0",
     "tailwindcss": "npm:tailwindcss@^3.4.0",
     "autoprefixer": "npm:autoprefixer@^10.4.16",
-    "postcss": "npm:postcss@^8.4.32"
+    "postcss": "npm:postcss@^8.4.32",
+    "class-transformer": "npm:class-transformer@^0.5.1",
+    "class-validator": "npm:class-validator@^0.14.0",
+    "reflect-metadata": "npm:reflect-metadata@^0.1.13"
   },
   "nodeModulesDir": "auto"
 }
