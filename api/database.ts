@@ -27,7 +27,7 @@ function initializeSchema() {
   // Create patients table
   db.exec(`
     CREATE TABLE IF NOT EXISTS patients (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id TEXT PRIMARY KEY NOT NULL,
       full_name TEXT NOT NULL,
       date_of_birth DATE NOT NULL,
       ssn TEXT UNIQUE NOT NULL,
@@ -42,7 +42,7 @@ function initializeSchema() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS patient_clinicians (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      patient_id INTEGER NOT NULL,
+      patient_id TEXT NOT NULL,
       clinician_id INTEGER NOT NULL,
       assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE,
