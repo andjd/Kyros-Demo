@@ -23,7 +23,7 @@ export class PatientController {
       if (!full_name || !date_of_birth || !ssn) {
         return c.render({ 
           error: "Missing required fields: full_name, date_of_birth, ssn" 
-        }, { status: 400 });
+        }), { status: 400 };
       }
 
       // Validate and parse SSN
@@ -33,7 +33,7 @@ export class PatientController {
       } catch (error) {
         return c.render({ 
           error: `Invalid SSN: ${error.message}` 
-        }, { status: 400 });
+        }), { status: 400 };
       }
 
       // Create patient using the model
