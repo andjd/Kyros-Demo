@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { Transform, Exclude, Expose } from "class-transformer";
 import { getDatabase } from "../database.ts";
-import { ROLE } from "../rbac.ts";
+import { ROLE } from "../middleware/rbac.ts";
 import { nanoid } from "https://deno.land/x/nanoid/mod.ts";
 
 export class PatientModel {

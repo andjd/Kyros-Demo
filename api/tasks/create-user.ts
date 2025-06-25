@@ -1,4 +1,4 @@
-import { getDatabase } from "./database.ts";
+import { getDatabase } from "../database.ts";
 
 function prompt(message: string): string {
   console.log(message);

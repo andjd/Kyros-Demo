@@ -1,6 +1,6 @@
 import { Context, Next } from "hono";
 import { instanceToPlain } from "class-transformer";
-import { ROLE } from "../rbac.ts";
+import { ROLE } from "./rbac.ts";
 
 // Helper to get user roles from JWT payload
 function getUserRoles(payload: any): ROLE[] {

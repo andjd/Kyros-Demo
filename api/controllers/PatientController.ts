@@ -1,5 +1,5 @@
 import type { Context } from "hono";
-import { Allowed, ROLE } from "../rbac.ts";
+import { Allowed, ROLE } from "../middleware/rbac.ts";
 import { PatientModel } from "../models/PatientModel.ts";
 import { validateAndParseSSN } from "../utils/ssnValidator.ts";
 
