@@ -15,8 +15,8 @@ export class PatientModel {
   date_of_birth!: string;
 
   @Expose()
-  @Transform(({ value, obj, key }, transformOptions) => {
-    const userRoles = transformOptions?.groups || [];
+  @Transform(({ value, _, options}) => {
+    const userRoles = options?.groups || [];
     
     // Convert number to formatted string
     const ssnDigits = value.toString().padStart(9, '0');
