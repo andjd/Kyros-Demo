@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { Allowed, ROLE } from "../middleware/rbac.ts";
 import { PatientModel } from "../models/PatientModel.ts";
 import { validateAndParseSSN } from "../utils/ssnValidator.ts";
+import { auditLog } from "../audit/AuditLog.ts";
 
 export class PatientController {
   @Allowed([ROLE.Clinician])
@@ -43,6 +44,16 @@ export class PatientController {
         symptoms,
         clinical_notes
       }, clinicianId);
+
+      // Audit log the patient creation
+      auditLog.log(
+        payload,
+        "patient_created",
+        { 
+          patient_id: patient.id,
+          patient_name: patient.full_name,
+        }
+      );
       
       return c.render({
         message: "Patient intake completed successfully",
@@ -62,7 +73,7 @@ export class PatientController {
   }
 
   @Allowed([ROLE.Clinician, ROLE.Admin])
-  async getPatients(c: Context) {
+  getPatients(c: Context) {
     console.log("GET PATIENTS")
     try {
       const payload = c.get("jwtPayload");
@@ -109,6 +120,16 @@ export class PatientController {
           return c.render({ error: "Patient not found" }, { status: 404 });
         }
       }
+
+      // Audit log the patient view
+      auditLog.log(
+        payload,
+        "patient_viewed",
+        { 
+          patient_id: patient.id,
+          patient_name: patient.full_name,
+        }
+      );
       
       return c.render({
         patient: patient

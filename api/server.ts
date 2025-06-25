@@ -4,6 +4,7 @@ import { sign, jwt } from 'hono/jwt'
 import { getDatabase } from "./database.ts";
 import { PatientController } from "./controllers/PatientController.ts";
 import { transformResponse } from "./middleware/transformResponse.ts";
+import { auditLog } from "./audit/AuditLog.ts";
 
 const app = new Hono();
 
@@ -25,7 +26,7 @@ interface LoginRequest {
   password: string;
 }
 
-interface User {
+export interface User {
   id: number;
   username: string;
   password: string;
@@ -58,6 +59,12 @@ app.post("/api/login", async (c) => {
     };
 
     const token = await sign(payload, JWT_SECRET);
+
+    // Audit log the login
+    auditLog.log(
+      user,
+      "user_login",
+    );
 
     return c.render({
       token: token,
