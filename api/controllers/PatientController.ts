@@ -74,7 +74,6 @@ export class PatientController {
 
   @Allowed([ROLE.Clinician, ROLE.Admin])
   getPatients(c: Context) {
-    console.log("GET PATIENTS")
     try {
       const payload = c.get("jwtPayload");
       const userRoles = payload.role.split(',').map((r: string) => r.trim());

@@ -17,7 +17,6 @@ function getUserRoles(payload: any): ROLE[] {
 
 // Helper to recursively transform class instances to plain objects
 function transformValue(value: any, userRoles: ROLE[]): any {
-  console.log(value)
   // If it's null or undefined, return as is
   if (value == null) return value;
   
@@ -48,7 +47,6 @@ function transformValue(value: any, userRoles: ROLE[]): any {
   for (const [key, val] of Object.entries(value)) {
     transformed[key] = transformValue(val, userRoles);
   }
-  console.log(transformed)
   return transformed;
 }
 

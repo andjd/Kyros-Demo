@@ -6,7 +6,8 @@
     "serve": "deno run --allow-net --allow-read jsr:@std/http@1/file-server dist/",
     "create-user": "deno run --allow-read --allow-write --allow-env --allow-ffi api/tasks/create-user.ts",
     "api": "deno run --allow-net --allow-read --allow-write --allow-env --allow-ffi api/server.ts",
-    "api-debug": "deno run --inspect-wait --allow-net --allow-read --allow-write --allow-env --allow-ffi api/server.ts"
+    "api-debug": "deno run --inspect-wait --allow-net --allow-read --allow-write --allow-env --allow-ffi api/server.ts",
+    "start": "deno run --allow-net --allow-read --allow-write --allow-env --allow-ffi api/server.ts & deno run -A --node-modules-dir npm:vite"
   },
   "compilerOptions": {
     "lib": ["ES2020", "DOM", "DOM.Iterable", "Deno.ns"],
