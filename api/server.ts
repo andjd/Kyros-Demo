@@ -10,8 +10,15 @@ const app = new Hono();
 // JWT secret key
 const JWT_SECRET = "your-secret-key-change-this-in-production";
 
+// Set up JSON renderer
+app.use("/*", async (c, next) => {
+  c.setRenderer((content) => {
+    return transformResponse(c, content)
+  })
+  await next();
+});
+
 app.use("/*", cors());
-app.use("/*", transformResponse);
 
 interface LoginRequest {
   username: string;
@@ -31,7 +38,7 @@ app.post("/api/login", async (c) => {
     const { username, password }: LoginRequest = await c.req.json();
 
     if (!username || !password) {
-      return c.json({ error: "Username and password are required" }, 400);
+      return c.render({ error: "Username and password are required" }, { status: 400 });
     }
 
     const db = getDatabase();
@@ -39,7 +46,7 @@ app.post("/api/login", async (c) => {
     const user = stmt.get(username) as User | undefined;
 
     if (!user || user.password !== password) {
-      return c.json({ error: "Invalid credentials" }, 401);
+      return c.render({ error: "Invalid credentials" }, { status: 401 });
     }
 
     // Create JWT
@@ -52,7 +59,7 @@ app.post("/api/login", async (c) => {
 
     const token = await sign(payload, JWT_SECRET);
 
-    return c.json({
+    return c.render({
       token: token,
       user: {
         id: user.id,
@@ -63,29 +70,15 @@ app.post("/api/login", async (c) => {
 
   } catch (error) {
     console.error("Login error:", error);
-    return c.json({ error: "Internal server error" }, 500);
+    return c.render({ error: "Internal server error" }, { status: 500 });
   }
-});
-
-// JWT middleware for protected routes
-app.use("/api/profile", jwt({ secret: JWT_SECRET }));
-
-// Protected route example
-app.get("/api/profile", (c) => {
-  const payload = c.get("jwtPayload");
-  return c.json({
-    user: {
-      id: payload.id,
-      username: payload.username,
-      role: payload.role,
-    }
-  });
 });
 
 // Patient routes
 const patientController = new PatientController();
 
 // JWT middleware for patient routes
+app.use("/api/patients", jwt({ secret: JWT_SECRET }));
 app.use("/api/patients/*", jwt({ secret: JWT_SECRET }));
 
 // Patient intake endpoint

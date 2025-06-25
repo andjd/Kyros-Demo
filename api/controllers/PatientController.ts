@@ -20,9 +20,9 @@ export class PatientController {
 
       // Validate required fields
       if (!full_name || !date_of_birth || !ssn) {
-        return c.json({ 
+        return c.render({ 
           error: "Missing required fields: full_name, date_of_birth, ssn" 
-        }, 400);
+        }, { status: 400 });
       }
 
       // Validate and parse SSN
@@ -30,9 +30,9 @@ export class PatientController {
       try {
         parsedSSN = validateAndParseSSN(ssn);
       } catch (error) {
-        return c.json({ 
+        return c.render({ 
           error: `Invalid SSN: ${error.message}` 
-        }, 400);
+        }, { status: 400 });
       }
 
       // Create patient using the model
@@ -44,25 +44,26 @@ export class PatientController {
         clinical_notes
       }, clinicianId);
       
-      return c.json({
+      return c.render({
         message: "Patient intake completed successfully",
         patient: patient,
         assigned_clinician: payload.username
-      }, 201);
+      }, { status: 201 });
       
     } catch (error) {
       console.error("Patient intake error:", error);
       
       if (error.message.includes("UNIQUE constraint failed: patients.ssn")) {
-        return c.json({ error: "A patient with this SSN already exists" }, 409);
+        return c.render({ error: "A patient with this SSN already exists" }, { status: 409 });
       }
       
-      return c.json({ error: "Internal server error" }, 500);
+      return c.render({ error: "Internal server error" }, { status: 500 });
     }
   }
 
   @Allowed([ROLE.Clinician, ROLE.Admin])
   async getPatients(c: Context) {
+    console.log("GET PATIENTS")
     try {
       const payload = c.get("jwtPayload");
       const userRoles = payload.role.split(',').map((r: string) => r.trim());
@@ -76,13 +77,13 @@ export class PatientController {
         patients = PatientModel.findByClinicianId(payload.id);
       }
       
-      return c.json({
+      return c.render({
         patients: patients
       });
       
     } catch (error) {
       console.error("Get patients error:", error);
-      return c.json({ error: "Internal server error" }, 500);
+      return c.render({ error: "Internal server error" }, { status: 500 });
     }
   }
 
@@ -96,7 +97,7 @@ export class PatientController {
       const patient = PatientModel.findById(patientId);
       
       if (!patient) {
-        return c.json({ error: "Patient not found" }, 404);
+        return c.render({ error: "Patient not found" }, { status: 404 });
       }
       
       // If user is not an Admin, check if they are assigned to this patient
@@ -105,17 +106,17 @@ export class PatientController {
         const isAssigned = assignedClinicians.some(clinician => clinician.id === payload.id);
         
         if (!isAssigned) {
-          return c.json({ error: "Patient not found" }, 404);
+          return c.render({ error: "Patient not found" }, { status: 404 });
         }
       }
       
-      return c.json({
+      return c.render({
         patient: patient
       });
       
     } catch (error) {
       console.error("Get patient error:", error);
-      return c.json({ error: "Internal server error" }, 500);
+      return c.render({ error: "Internal server error" }, { status: 500 });
     }
   }
 }

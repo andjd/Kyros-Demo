@@ -19,14 +19,8 @@ export class PatientModel {
     const userRoles = transformOptions?.groups || [];
     
     // Convert number to formatted string
-    let ssnString = '';
-    if (typeof value === 'number') {
-      // Pad with leading zeros to ensure 9 digits
-      const ssnStr = value.toString().padStart(9, '0');
-      ssnString = `${ssnStr.slice(0, 3)}-${ssnStr.slice(3, 5)}-${ssnStr.slice(5, 9)}`;
-    } else if (typeof value === 'string') {
-      ssnString = value;
-    }
+    const ssnDigits = value.toString().padStart(9, '0');
+    const ssnString = `${ssnDigits.slice(0, 3)}-${ssnDigits.slice(3, 5)}-${ssnDigits.slice(5, 9)}`;
     
     // If user has Admin role, show full SSN
     if (userRoles.includes(ROLE.Admin)) {
@@ -182,7 +176,8 @@ export class PatientModel {
       WHERE pc.patient_id = ?
     `);
     
-    return stmt.all(this.id);
+    const rows = stmt.all(this.id)
+    return rows.map(row => new PatientModel(row as any));
   }
 
   // Assign a clinician to this patient

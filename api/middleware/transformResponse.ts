@@ -1,4 +1,4 @@
-import { Context, Next } from "hono";
+import { Context } from "hono";
 import { instanceToPlain } from "class-transformer";
 import { ROLE } from "./rbac.ts";
 
@@ -17,6 +17,7 @@ function getUserRoles(payload: any): ROLE[] {
 
 // Helper to recursively transform class instances to plain objects
 function transformValue(value: any, userRoles: ROLE[]): any {
+  console.log(value)
   // If it's null or undefined, return as is
   if (value == null) return value;
   
@@ -47,39 +48,22 @@ function transformValue(value: any, userRoles: ROLE[]): any {
   for (const [key, val] of Object.entries(value)) {
     transformed[key] = transformValue(val, userRoles);
   }
-  
+  console.log(transformed)
   return transformed;
 }
 
-export const transformResponse = async (c: Context, next: Next) => {
-  await next();
-  
-  // Only transform JSON responses
-  const contentType = c.res.headers.get('Content-Type');
-  if (!contentType?.includes('application/json')) {
-    return;
-  }
-  
+export const transformResponse = async (c: Context, content: any) => {
   try {
     // Get user roles from JWT payload
     const payload = c.get("jwtPayload");
     const userRoles = getUserRoles(payload);
+
     
-    // Get the response body
-    const response = await c.res.json();
-    
-    // Transform the response recursively
-    const transformedResponse = transformValue(response, userRoles);
-    
-    // Set the transformed response
-    c.res = new Response(JSON.stringify(transformedResponse), {
-      status: c.res.status,
-      statusText: c.res.statusText,
-      headers: c.res.headers
-    });
+    return c.json(transformValue(content, userRoles));
     
   } catch (error) {
     // If transformation fails, leave response as is
     console.warn("Failed to transform response:", error);
+    c.json(content)
   }
 };
