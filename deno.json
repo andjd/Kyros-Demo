@@ -4,7 +4,7 @@
     "build": "deno run -A --node-modules-dir npm:vite build",
     "preview": "deno run -A --node-modules-dir npm:vite preview",
     "serve": "deno run --allow-net --allow-read jsr:@std/http@1/file-server dist/",
-    "create-user": "deno run --allow-read --allow-write --allow-env --allow-ffi api/create-user.ts",
+    "create-user": "deno run --allow-read --allow-write --allow-env --allow-ffi api/tasks/create-user.ts",
     "api": "deno run --allow-net --allow-read --allow-write --allow-env --allow-ffi api/server.ts"
   },
   "compilerOptions": {
