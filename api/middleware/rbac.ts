@@ -14,7 +14,8 @@ export function Allowed(allowedRoles: ROLE[]) {
       const payload = c.get("jwtPayload");
       
       if (!payload) {
-        return c.render({ error: "Unauthorized" }, { status: 401 });
+        c.status(401)
+        return c.render({ error: "Unauthorized" });
       }
       
       // Get user roles - can be a string or array
@@ -31,11 +32,12 @@ export function Allowed(allowedRoles: ROLE[]) {
       );
       
       if (!hasPermission) {
+        c.status(403)
         return c.render({ 
           error: "Insufficient permissions", 
           required: allowedRoles,
           userRoles: userRoles 
-        }, { status: 403 });
+        });
       }
       
       return originalMethod.call(this, c);
@@ -51,7 +53,8 @@ export function requireRoles(allowedRoles: ROLE[]) {
     const payload = c.get("jwtPayload");
     
     if (!payload) {
-      return c.render({ error: "Unauthorized" }, { status: 401 });
+      c.status(401)
+      return c.render({ error: "Unauthorized" });
     }
     
     // Get user roles - can be a string or array
@@ -68,11 +71,12 @@ export function requireRoles(allowedRoles: ROLE[]) {
     );
     
     if (!hasPermission) {
+      c.status(403)
       return c.render({ 
         error: "Insufficient permissions", 
         required: allowedRoles,
         userRoles: userRoles 
-      }, { status: 403 });
+      });
     }
     
     await next();

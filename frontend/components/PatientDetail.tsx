@@ -30,7 +30,7 @@ export default function PatientDetail({ patientId, token, onBack }: PatientDetai
     try {
       const response = await fetch(`http://localhost:8000/api/patients/${patientId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': token,
           'Content-Type': 'application/json',
         },
       });

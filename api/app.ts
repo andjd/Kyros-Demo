@@ -5,11 +5,9 @@ import { getDatabase } from "./database.ts";
 import { PatientController } from "./controllers/PatientController.ts";
 import { transformResponse } from "./middleware/transformResponse.ts";
 import { auditLog } from "./audit/AuditLog.ts";
+import { JWT_SECRET_KEY } from "./secrets.ts";
 
 const app = new Hono();
-
-// JWT secret key
-const JWT_SECRET = "your-secret-key-change-this-in-production";
 
 // Set up JSON renderer
 app.use("/*", async (c, next) => {
@@ -39,7 +37,8 @@ app.post("/api/login", async (c) => {
     const { username, password }: LoginRequest = await c.req.json();
 
     if (!username || !password) {
-      return c.render({ error: "Username and password are required" }, { status: 400 });
+      c.status(400)
+      return c.render({ error: "Username and password are required" });
     }
 
     const db = getDatabase();
@@ -47,7 +46,8 @@ app.post("/api/login", async (c) => {
     const user = stmt.get(username) as User | undefined;
 
     if (!user || user.password !== password) {
-      return c.render({ error: "Invalid credentials" }, { status: 401 });
+      c.status(401)
+      return c.render({ error: "Invalid credentials" });
     }
 
     // Create JWT
@@ -58,16 +58,15 @@ app.post("/api/login", async (c) => {
       exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // 24 hours
     };
 
-    const token = await sign(payload, JWT_SECRET);
+    const token = await sign(payload, JWT_SECRET_KEY);
 
     // Audit log the login
     auditLog.log(
       user,
       "user_login",
     );
-
     return c.render({
-      token: token,
+      token: `Bearer ${token}`,
       user: {
         id: user.id,
         username: user.username,
@@ -77,6 +76,7 @@ app.post("/api/login", async (c) => {
 
   } catch (error) {
     console.error("Login error:", error);
+    c.status(500)
     return c.render({ error: "Internal server error" }, { status: 500 });
   }
 });
@@ -85,8 +85,8 @@ app.post("/api/login", async (c) => {
 const patientController = new PatientController();
 
 // JWT middleware for patient routes
-app.use("/api/patients", jwt({ secret: JWT_SECRET }));
-app.use("/api/patients/*", jwt({ secret: JWT_SECRET }));
+app.use("/api/patients", jwt({ secret: JWT_SECRET_KEY }));
+app.use("/api/patients/*", jwt({ secret: JWT_SECRET_KEY }));
 
 // Patient intake endpoint
 app.post("/api/patients/intake", (c) => patientController.postIntake(c));

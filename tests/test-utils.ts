@@ -1,14 +1,24 @@
+import { stub, type Stub } from "jsr:@std/testing/mock";
 import { getTestDatabase } from "./database-test.ts";
-import { mockAuditLog } from "./audit-log-mock.ts";
+import { mockDatabase } from "../api/database.ts";
+import { auditLog } from "../api/audit/AuditLog.ts";
 import app from "../api/app.ts";
 
-// Setup test environment by overriding global functions
+let auditLogStub: Stub | null = null; 
+// Setup test environment using Deno's stub function
 export function setupTestEnvironment() {
-  // Override the database getter to use test database
-  globalThis.getDatabase = getTestDatabase;
+  // Stub the database getter to use test database
+  mockDatabase(getTestDatabase())
   
-  // Override audit log to use mock
-  globalThis.auditLog = mockAuditLog;
+  // Stub audit log to use mock (no-op function)
+  auditLogStub = stub(auditLog, "log", () => {});
+}
+
+// Cleanup function to restore original functions
+export function cleanupTestEnvironment() {
+  mockDatabase(null)
+  auditLogStub?.restore();
+  auditLogStub = null;
 }
 
 // Create a test client that works with Hono's fetch API

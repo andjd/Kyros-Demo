@@ -21,9 +21,10 @@ export class PatientController {
 
       // Validate required fields
       if (!full_name || !date_of_birth || !ssn) {
+        c.status(400)
         return c.render({ 
           error: "Missing required fields: full_name, date_of_birth, ssn" 
-        }), { status: 400 };
+        });
       }
 
       // Validate and parse SSN
@@ -31,9 +32,10 @@ export class PatientController {
       try {
         parsedSSN = validateAndParseSSN(ssn);
       } catch (error) {
+        c.status(400)
         return c.render({ 
           error: `Invalid SSN: ${error.message}` 
-        }), { status: 400 };
+        })
       }
 
       // Create patient using the model
@@ -54,21 +56,22 @@ export class PatientController {
           patient_name: patient.full_name,
         }
       );
-      
+      c.status(201)
       return c.render({
         message: "Patient intake completed successfully",
         patient: patient,
         assigned_clinician: payload.username
-      }, { status: 201 });
+      });
       
     } catch (error) {
       console.error("Patient intake error:", error);
       
       if (error.message.includes("UNIQUE constraint failed: patients.ssn")) {
-        return c.render({ error: "A patient with this SSN already exists" }, { status: 409 });
+        c.status(409)
+        return c.render({ error: "A patient with this SSN already exists" });
       }
-      
-      return c.render({ error: "Internal server error" }, { status: 500 });
+      c.status(500)
+      return c.render({ error: "Internal server error" });
     }
   }
 
@@ -86,14 +89,15 @@ export class PatientController {
       } else {
         patients = PatientModel.findByClinicianId(payload.id);
       }
-      
+
       return c.render({
         patients: patients
       });
       
     } catch (error) {
       console.error("Get patients error:", error);
-      return c.render({ error: "Internal server error" }, { status: 500 });
+      c.status(500)
+      return c.render({ error: "Internal server error" });
     }
   }
 
@@ -107,7 +111,8 @@ export class PatientController {
       const patient = PatientModel.findById(patientId);
       
       if (!patient) {
-        return c.render({ error: "Patient not found" }, { status: 404 });
+        c.status(404)
+        return c.render({ error: "Patient not found" });
       }
       
       // If user is not an Admin, check if they are assigned to this patient
@@ -116,7 +121,8 @@ export class PatientController {
         const isAssigned = assignedClinicians.some(clinician => clinician.id === payload.id);
         
         if (!isAssigned) {
-          return c.render({ error: "Patient not found" }, { status: 404 });
+          c.status(404)
+          return c.render({ error: "Patient not found" });
         }
       }
 
@@ -136,7 +142,8 @@ export class PatientController {
       
     } catch (error) {
       console.error("Get patient error:", error);
-      return c.render({ error: "Internal server error" }, { status: 500 });
+      c.status(500)
+      return c.render({ error: "Internal server error" });
     }
   }
 }

@@ -1,5 +1,6 @@
-import { getTestDatabase } from "./database-test.ts";
 import { sign } from 'hono/jwt';
+import { JWT_SECRET_KEY } from "../api/secrets.ts";
+import { getDatabase } from "../api/database.ts";
 
 export interface TestUser {
   id?: number;
@@ -19,19 +20,22 @@ export interface TestPatient {
 
 export const testUsers: Record<string, TestUser> = {
   clinician: {
+    id: 1000,
     username: "test_clinician",
     password: "password123",
     role: "Clinician"
   },
   admin: {
+    id: 1001,
     username: "test_admin", 
     password: "password123",
     role: "Admin"
   },
-  regular: {
-    username: "test_regular",
-    password: "password123", 
-    role: "Regular"
+  both: {
+    id: 1002,
+    username: "test_both", 
+    password: "password123",
+    role: "Clinician,Admin"
   }
 };
 
@@ -59,19 +63,17 @@ export const testPatients: Record<string, TestPatient> = {
   }
 };
 
-const JWT_SECRET = "test-secret-key";
-
 export async function seedTestUsers(): Promise<void> {
-  const db = getTestDatabase();
+  const db = getDatabase();
   
   // Insert test users and get their IDs
   for (const [key, user] of Object.entries(testUsers)) {
     const stmt = db.prepare(`
-      INSERT INTO users (username, password, role)
-      VALUES (?, ?, ?)
+      INSERT OR REPLACE INTO users (id, username, password, role)
+      VALUES (?, ?, ?, ?)
     `);
     
-    stmt.run(user.username, user.password, user.role);
+    stmt.run(user.id, user.username, user.password, user.role);
     
     // Get the inserted user ID
     const getUserStmt = db.prepare("SELECT * FROM users WHERE username = ?");
@@ -87,7 +89,7 @@ export async function seedTestUsers(): Promise<void> {
       exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // 24 hours
     };
     
-    testUsers[key].token = await sign(payload, JWT_SECRET);
+    testUsers[key].token = await sign(payload, JWT_SECRET_KEY);
   }
 }
 

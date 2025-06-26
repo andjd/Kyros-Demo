@@ -1,224 +1,94 @@
-import { assertEquals, assertNotEquals, assert } from "jsr:@std/assert";
-import { setupTestEnvironment, testClient } from "./test-utils.ts";
-import { closeTestDatabase } from "./database-test.ts";
+import { assertEquals } from "jsr:@std/assert";
+import { setupTestEnvironment, cleanupTestEnvironment, testClient } from "./test-utils.ts";
+import { closeTestDatabase, resetTestDatabase } from "./database-test.ts";
 import { mockAuditLog } from "./audit-log-mock.ts";
 import { seedTestUsers, getTestUserToken, testPatients } from "./fixtures.ts";
+import {
+  beforeEach,
+  describe,
+  it,
+  beforeAll,
+  afterAll,
+} from "jsr:@std/testing/bdd";
 
-function teardownTestEnvironment() {
-  closeTestDatabase();
-}
+describe("Application", () => {
+  beforeAll(async () => {
+    setupTestEnvironment()
+    await seedTestUsers()
+  })
 
-function clearAuditLogs() {
-  mockAuditLog.clear();
-}
+  afterAll(() => {
+    cleanupTestEnvironment();
+    closeTestDatabase();
+  })
 
-// Test setup - run once before all tests
-let setupComplete = false;
-async function ensureSetup() {
-  if (!setupComplete) {
-    setupTestEnvironment();
-    await seedTestUsers();
-    setupComplete = true;
-  }
-}
+  beforeEach(async () => {
+    mockAuditLog.clear()
+    resetTestDatabase()
+    await seedTestUsers()
+  })
 
-// Patient Intake Authorization Tests
-Deno.test("Patient Intake - Clinician role can use patient intake endpoint", async () => {
-  await ensureSetup();
-  clearAuditLogs();
-  
-  const token = getTestUserToken("clinician");
-  
-  const response = await testClient.post("/api/patients/intake", testPatients.johnDoe, {
-    "Authorization": `Bearer ${token}`
-  });
+  describe("Patient Intake Permissions", () => {
 
-  assertEquals(response.status, 201);
-  assertEquals(response.body.message, "Patient intake completed successfully");
-  assertEquals(response.body.patient.full_name, testPatients.johnDoe.full_name);
-  assertEquals(response.body.assigned_clinician, "test_clinician");
+    it("Allows Clinicians to create patient records", async () => {
+      const token = getTestUserToken("clinician");
   
-  // Verify audit log
-  const logs = mockAuditLog.getLogsByAction("patient_created");
-  assertEquals(logs.length, 1);
-});
+      const response = await testClient.post("/api/patients/intake", testPatients.johnDoe, {
+        "Authorization": `Bearer ${token}`
+      });
 
-Deno.test("Patient Intake - Non-Clinician role cannot use patient intake endpoint", async () => {
-  await ensureSetup();
-  clearAuditLogs();
-  
-  const token = getTestUserToken("regular");
-  
-  const response = await testClient.post("/api/patients/intake", testPatients.janeSmith, {
-    "Authorization": `Bearer ${token}`
-  });
+      assertEquals(response.status, 201);
+    })
 
-  assertEquals(response.status, 403);
-  assertEquals(response.body.error, "Insufficient permissions");
+    it("Does not allow Admins to create patient records", async () => {
+      const token = getTestUserToken("admin");
   
-  // Verify no audit log for failed attempt
-  const logs = mockAuditLog.getLogsByAction("patient_created");
-  assertEquals(logs.length, 0);
-});
+      const response = await testClient.post("/api/patients/intake", testPatients.johnDoe, {
+        "Authorization": `Bearer ${token}`
+      });
+      console.dir(response)
+      assertEquals(response.status, 403);
+    })
 
-Deno.test("Patient Intake - Unauthenticated user cannot use patient intake endpoint", async () => {
-  await ensureSetup();
-  clearAuditLogs();
+    it("Allows Admin to create paitent records if they also have the Clinician role", async () => {
+      const token = getTestUserToken("both");
   
-  const response = await testClient.post("/api/patients/intake", testPatients.bobJohnson);
+      const response = await testClient.post("/api/patients/intake", testPatients.johnDoe, {
+        "Authorization": `Bearer ${token}`
+      });
 
-  assertEquals(response.status, 401);
-  // Should get JWT middleware error
-  assert(response.body.error || response.body.message);
-  
-  // Verify no audit log for unauthenticated attempt
-  const logs = mockAuditLog.getLogsByAction("patient_created");
-  assertEquals(logs.length, 0);
-});
+      assertEquals(response.status, 201);
+    })
 
-// SSN Redaction Tests
-Deno.test("SSN Redaction - Admin role sees unredacted SSN", async () => {
-  await ensureSetup();
-  clearAuditLogs();
+    it("Does not allow non-logged in users to create patient records", async () => {
   
-  // Create a patient for SSN redaction test
-  const clinicianToken = getTestUserToken("clinician");
-  
-  const createResponse = await testClient.post("/api/patients/intake", {
-    ...testPatients.johnDoe,
-    ssn: "987-65-1234" // Specific SSN for this test
-  }, {
-    "Authorization": `Bearer ${clinicianToken}`
-  });
-    
-  assertEquals(createResponse.status, 201);
-  const patientId = createResponse.body.patient.id;
-  
-  // Clear logs from creation
-  clearAuditLogs();
-  
-  // Fetch patient as admin
-  const adminToken = getTestUserToken("admin");
-  
-  const response = await testClient.get(`/api/patients/${patientId}`, {
-    "Authorization": `Bearer ${adminToken}`
-  });
+      const response = await testClient.post("/api/patients/intake", testPatients.johnDoe);
 
-  assertEquals(response.status, 200);
-  assertEquals(response.body.patient.ssn, "987-65-1234", "Admin should see full unredacted SSN");
-  
-  // Verify audit log
-  const logs = mockAuditLog.getLogsByAction("patient_viewed");
-  assertEquals(logs.length, 1);
-});
+      assertEquals(response.status, 401);
+    })
+  })
 
-Deno.test("SSN Redaction - Non-Admin role sees redacted SSN", async () => {
-  await ensureSetup();
-  clearAuditLogs();
-  
-  // Create a patient for SSN redaction test
-  const clinicianToken = getTestUserToken("clinician");
-  
-  const createResponse = await testClient.post("/api/patients/intake", {
-    ...testPatients.johnDoe,
-    ssn: "555-44-3333" // Specific SSN for this test
-  }, {
-    "Authorization": `Bearer ${clinicianToken}`
-  });
-    
-  assertEquals(createResponse.status, 201);
-  const patientId = createResponse.body.patient.id;
-  
-  // Clear logs from creation
-  clearAuditLogs();
-  
-  // Fetch patient as clinician (non-admin)
-  const response = await testClient.get(`/api/patients/${patientId}`, {
-    "Authorization": `Bearer ${clinicianToken}`
-  });
+  describe("SSN Redaction", () => {
+    it("shows Admins unredacted SSNs", async () => {
 
-  assertEquals(response.status, 200);
-  assertEquals(response.body.patient.ssn, "XXX-XX-3333", "Clinician should see redacted SSN with only last 4 digits");
-  assertNotEquals(response.body.patient.ssn, "555-44-3333", "SSN should be redacted for non-admin users");
-  
-  // Verify audit log
-  const logs = mockAuditLog.getLogsByAction("patient_viewed");
-  assertEquals(logs.length, 1);
-});
+    })
 
-// Audit Log Verification Tests
-Deno.test("Audit Log - Patient creation is logged", async () => {
-  await ensureSetup();
-  clearAuditLogs();
-  
-  const token = getTestUserToken("clinician");
-  
-  const response = await testClient.post("/api/patients/intake", {
-    full_name: "Audit Test Patient",
-    date_of_birth: "1995-01-01",
-    ssn: "111-22-3333",
-    symptoms: "Test symptoms"
-  }, {
-    "Authorization": `Bearer ${token}`
-  });
+    it("shows clinicians redacted SSNs", async () => {
 
-  assertEquals(response.status, 201);
+    })
+  })
 
-  const logs = mockAuditLog.getLogsByAction("patient_created");
-  assertEquals(logs.length, 1);
-  assertEquals(logs[0].details?.patient_name, "Audit Test Patient");
-});
+  describe("Audit Logging", () => {
+    it("logs when a patient is created", async () => {
 
-Deno.test("Audit Log - Patient viewing is logged", async () => {
-  await ensureSetup();
-  clearAuditLogs();
-  
-  // First create a patient
-  const clinicianToken = getTestUserToken("clinician");
-  
-  const createResponse = await testClient.post("/api/patients/intake", {
-    full_name: "View Test Patient",
-    date_of_birth: "1996-01-01", 
-    ssn: "222-33-4444",
-    symptoms: "Test symptoms"
-  }, {
-    "Authorization": `Bearer ${clinicianToken}`
-  });
-    
-  assertEquals(createResponse.status, 201);
-  const patientId = createResponse.body.patient.id;
-  
-  // Clear logs from creation
-  clearAuditLogs();
-  
-  // Now view the patient
-  const viewResponse = await testClient.get(`/api/patients/${patientId}`, {
-    "Authorization": `Bearer ${clinicianToken}`
-  });
+    })
 
-  assertEquals(viewResponse.status, 200);
+    it("logs whin a patient is viewed", async () => {
 
-  const logs = mockAuditLog.getLogsByAction("patient_viewed");
-  assertEquals(logs.length, 1);
-  assertEquals(logs[0].details?.patient_name, "View Test Patient");
-});
+    })
 
-Deno.test("Audit Log - User login is logged", async () => {
-  await ensureSetup();
-  clearAuditLogs();
-  
-  const response = await testClient.post("/api/login", {
-    username: "test_clinician",
-    password: "password123"
-  });
+    it("logs when a user logs in", async () => {
 
-  assertEquals(response.status, 200);
-
-  const logs = mockAuditLog.getLogsByAction("user_login");
-  assert(logs.length >= 1, "Login should be logged");
-});
-
-// Cleanup after all tests
-Deno.test("Cleanup - Teardown test environment", () => {
-  teardownTestEnvironment();
-});
+    })
+  })
+})

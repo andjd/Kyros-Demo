@@ -1,14 +1,21 @@
 import { Database } from "@db/sqlite";
+import test from "node:test";
 
 let db: Database | null = null;
+let testDb: Database | null = null
 
 export function getDatabase(): Database {
   if (!db) {
     db = new Database("./database.sqlite");
     initializeSchema();
   }
-  return db;
+  return testDb || db;
 }
+
+export function mockDatabase(new_db) {
+  testDb = new_db
+}
+
 
 function initializeSchema() {
   if (!db) return;

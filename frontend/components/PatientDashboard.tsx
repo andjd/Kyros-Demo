@@ -29,7 +29,7 @@ export default function PatientDashboard({ token, onPatientSelect }: PatientDash
     try {
       const response = await fetch('http://localhost:8000/api/patients', {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': token,
           'Content-Type': 'application/json',
         },
       });
