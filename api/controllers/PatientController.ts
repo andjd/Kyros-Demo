@@ -125,7 +125,6 @@ export class PatientController {
           return c.render({ error: "Patient not found" });
         }
       }
-
       // Audit log the patient view
       auditLog.log(
         payload,

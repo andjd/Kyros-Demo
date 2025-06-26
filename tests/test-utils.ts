@@ -3,6 +3,7 @@ import { getTestDatabase } from "./database-test.ts";
 import { mockDatabase } from "../api/database.ts";
 import { auditLog } from "../api/audit/AuditLog.ts";
 import app from "../api/app.ts";
+import * as mockAuditLog from "./audit-log-mock.ts";
 
 let auditLogStub: Stub | null = null; 
 // Setup test environment using Deno's stub function
@@ -11,7 +12,7 @@ export function setupTestEnvironment() {
   mockDatabase(getTestDatabase())
   
   // Stub audit log to use mock (no-op function)
-  auditLogStub = stub(auditLog, "log", () => {});
+  auditLogStub = stub(auditLog, "log", mockAuditLog.log);
 }
 
 // Cleanup function to restore original functions
@@ -19,6 +20,7 @@ export function cleanupTestEnvironment() {
   mockDatabase(null)
   auditLogStub?.restore();
   auditLogStub = null;
+  mockAuditLog.clear()
 }
 
 // Create a test client that works with Hono's fetch API

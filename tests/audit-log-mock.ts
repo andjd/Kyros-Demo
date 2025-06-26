@@ -1,42 +1,28 @@
-// Mock audit log for testing
-export interface AuditLogEntry {
-  timestamp: string;
-  user: any;
-  action: string;
-  details?: any;
-}
+import { User } from "../api/app.ts";
+import { AuditEntry } from "../api/audit/AuditLog.ts";
 
-class MockAuditLog {
-  private logs: AuditLogEntry[] = [];
 
-  log(user: any, action: string, details?: any): void {
-    this.logs.push({
-      timestamp: new Date().toISOString(),
-      user,
+let logs: AuditEntry[] = [];
+
+export function log(
+    {id: userId, role: userRole}: User,
+    action: string,
+    payload: Record<string, any> = {}
+  ): void {
+    const entry: AuditEntry = {
+      userId,
+      userRole,
       action,
-      details
-    });
+      timestamp: new Date().toISOString(),
+      payload,
+    };
+    logs.push(entry);
   }
 
-  getLogs(): AuditLogEntry[] {
-    return [...this.logs];
+  export function getLogs(): AuditEntry[] {
+    return [...logs];
   }
 
-  getLogsByUser(userId: number): AuditLogEntry[] {
-    return this.logs.filter(log => log.user?.id === userId);
+  export function clear(): void {
+    logs = [];
   }
-
-  getLogsByAction(action: string): AuditLogEntry[] {
-    return this.logs.filter(log => log.action === action);
-  }
-
-  clear(): void {
-    this.logs = [];
-  }
-
-  getLogCount(): number {
-    return this.logs.length;
-  }
-}
-
-export const mockAuditLog = new MockAuditLog();
