@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { Transform, Exclude, Expose } from "class-transformer";
+import { Transform, Expose } from "class-transformer";
 import { getDatabase } from "../database.ts";
 import { ROLE } from "../middleware/rbac.ts";
 import { nanoid } from "https://deno.land/x/nanoid/mod.ts";
@@ -59,7 +59,6 @@ export class PatientModel {
     }
   }
 
-  // Static factory methods for database operations
   static create(patientData: {
     full_name: string;
     date_of_birth: string;
@@ -70,11 +69,9 @@ export class PatientModel {
     const db = getDatabase();
     const patientId = nanoid();
     
-    // Start transaction
     db.exec("BEGIN TRANSACTION");
     
     try {
-      // Insert patient
       const patientStmt = db.prepare(`
         INSERT INTO patients (id, full_name, date_of_birth, ssn, symptoms, clinical_notes)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -89,7 +86,6 @@ export class PatientModel {
         patientData.clinical_notes || null
       );
       
-      // Assign the creating clinician to the patient
       const assignmentStmt = db.prepare(`
         INSERT INTO patient_clinicians (patient_id, clinician_id)
         VALUES (?, ?)
@@ -99,7 +95,6 @@ export class PatientModel {
       
       db.exec("COMMIT");
       
-      // Return the created patient
       return PatientModel.findById(patientId)!;
       
     } catch (error) {
@@ -192,15 +187,4 @@ export class PatientModel {
     return true;
   }
 
-  // Remove a clinician from this patient
-  unassignClinician(clinicianId: number): boolean {
-    const db = getDatabase();
-    const stmt = db.prepare(`
-      DELETE FROM patient_clinicians 
-      WHERE patient_id = ? AND clinician_id = ?
-    `);
-    
-    stmt.run(this.id, clinicianId);
-    return true;
-  }
 }

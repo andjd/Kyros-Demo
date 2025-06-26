@@ -2,12 +2,10 @@ export function validateAndParseSSN(ssnInput: string): number {
   // Remove all non-digit characters
   const digitsOnly = ssnInput.replace(/\D/g, '');
   
-  // Validate that it's exactly 9 digits
   if (digitsOnly.length !== 9) {
     throw new Error("SSN must be exactly 9 digits");
   }
   
-  // Validate that it's all numeric
   if (!/^\d{9}$/.test(digitsOnly)) {
     throw new Error("SSN must contain only digits");
   }
