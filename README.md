@@ -1,4 +1,4 @@
-# Vite + Deno + React + TypeScript
+# Kyros Demo
 
 ## Running
 
